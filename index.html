@@ -98,7 +98,10 @@
             description;
     }
 
+
 <script>
+    const threshold = 60;
+
     function selectScenario(scenario) {
         let description;
         let risk;
@@ -121,8 +124,27 @@
 
         document.getElementById("risk").textContent =
             "Risk Score: " + risk + "%";
+
+        evaluateRisk(risk);
+    }
+
+    function evaluateRisk(risk) {
+        const warning = document.getElementById("warning");
+        const status = document.getElementById("status");
+
+        if (risk >= threshold) {
+            warning.textContent = "COLLISION WARNING";
+            warning.style.color = "#ef4444";
+            status.textContent = "Status: Potential collision detected";
+        }
+        else {
+            warning.textContent = "NO WARNING";
+            warning.style.color = "#4ade80";
+            status.textContent = "Status: Monitoring Road";
+        }
     }
 </script>
+
 
 
 
