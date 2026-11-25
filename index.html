@@ -90,8 +90,24 @@
 
     <p id="thresholdDisplay">Warning Threshold: 60%</p>
 
+    <h2>Driver Response</h2>
+
+    <button id="brakeButton"
+        onclick="driverResponse('Brake')" disabled>
+        Brake
+    </button>
+
+    <button id="ignoreButton"
+        onclick="driverResponse('Ignore')" disabled>
+        Ignore Warning
+    </button>
+
+    <p id="response">Response: Waiting for warning</p>
+    <p id="reactionTime">Reaction Time: --</p>
+
     <script>
         let threshold = 60;
+        let warningTime = null;
 
         function updateThreshold() {
             threshold = Number(
@@ -128,7 +144,6 @@
 
             let risk = Math.round(baseRisk + sensorNoise);
 
-            // Keep risk between 0 and 100
             risk = Math.max(0, Math.min(100, risk));
 
             document.getElementById("environment").textContent =
@@ -136,6 +151,13 @@
 
             document.getElementById("risk").textContent =
                 "Risk Score: " + risk + "%";
+
+            // Reset driver response for the new scenario
+            document.getElementById("response").textContent =
+                "Response: Waiting for warning";
+
+            document.getElementById("reactionTime").textContent =
+                "Reaction Time: --";
 
             evaluateRisk(risk, actualHazard);
         }
@@ -150,14 +172,28 @@
                 warning.textContent = "COLLISION WARNING";
                 warning.style.color = "#ef4444";
                 status.textContent = "Status: Potential collision detected";
+
+                // Start measuring response time
+                warningTime = performance.now();
+
+                document.getElementById("brakeButton").disabled = false;
+                document.getElementById("ignoreButton").disabled = false;
+
+                document.getElementById("response").textContent =
+                    "Response: Awaiting driver action";
             }
             else {
                 warning.textContent = "NO WARNING";
                 warning.style.color = "#4ade80";
                 status.textContent = "Status: Monitoring Road";
+
+                warningTime = null;
+
+                document.getElementById("brakeButton").disabled = true;
+                document.getElementById("ignoreButton").disabled = true;
             }
 
-            // Classify the detection outcome
+            // Classify detection outcome
             if (warningIssued && actualHazard) {
                 console.log("Hit");
             }
@@ -171,7 +207,32 @@
                 console.log("Correct Rejection");
             }
         }
+
+        function driverResponse(action) {
+            if (warningTime === null) {
+                return;
+            }
+
+            let reactionTime =
+                (performance.now() - warningTime) / 1000;
+
+            document.getElementById("response").textContent =
+                "Response: " + action;
+
+            document.getElementById("reactionTime").textContent =
+                "Reaction Time: " + reactionTime.toFixed(2) + " seconds";
+
+            // Prevent multiple responses to the same warning
+            warningTime = null;
+
+            document.getElementById("brakeButton").disabled = true;
+            document.getElementById("ignoreButton").disabled = true;
+        }
     </script>
+
+</body>
+</html>
+
 
 </body>
 </html>
