@@ -1,51 +1,50 @@
 
 <!DOCTYPE html>
 <html lang="en">
-    
-<style>
-    body {
-        background-color: #101827;
-        color: white;
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 30px;
-    }
-
-    #dashboard {
-        background-color: #243247;
-        border: 2px solid #3b82f6;
-        border-radius: 12px;
-        padding: 30px;
-        margin: 20px auto;
-        max-width: 500px;
-    }
-
-    #warning {
-        color: #4ade80;
-        font-size: 28px;
-    }
-
-    #risk {
-        font-size: 22px;
-    }
-
-    #status {
-        color: #cbd5e1;
-    }
-
-    #environment {
-        background-color: #243247;
-        padding: 20px;
-        border-radius: 8px;
-        max-width: 500px;
-        margin: 20px auto;
-    }
-</style>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adaptive Driver Warning System</title>
+
+    <style>
+        body {
+            background-color: #101827;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px;
+        }
+
+        #dashboard {
+            background-color: #243247;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 500px;
+        }
+
+        #warning {
+            color: #4ade80;
+            font-size: 28px;
+        }
+
+        #risk {
+            font-size: 22px;
+        }
+
+        #status {
+            color: #cbd5e1;
+        }
+
+        #environment {
+            background-color: #243247;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+    </style>
 </head>
 
 <body>
@@ -66,143 +65,113 @@
     <h2>Driving Environment</h2>
 
     <p id="environment">No scenario selected.</p>
+
     <h2>Select Driving Scenario</h2>
 
-<button onclick="selectScenario('safe')">
-    Clear Road
-</button>
+    <button onclick="selectScenario('safe')">
+        Clear Road
+    </button>
 
-<button onclick="selectScenario('traffic')">
-    Slow Traffic
-</button>
+    <button onclick="selectScenario('traffic')">
+        Slow Traffic
+    </button>
 
-<button onclick="selectScenario('hazard')">
-    Sudden Braking
-</button>
+    <button onclick="selectScenario('hazard')">
+        Sudden Braking
+    </button>
 
+    <h2>Warning Sensitivity</h2>
 
-<script>
-    const threshold = 60;
+    <select id="sensitivity" onchange="updateThreshold()">
+        <option value="80">Cautious</option>
+        <option value="60" selected>Balanced</option>
+        <option value="30">Eager</option>
+    </select>
 
-    function selectScenario(scenario) {
-        let description;
-        let baseRisk;
-        let actualHazard;
+    <p id="thresholdDisplay">Warning Threshold: 60%</p>
 
-        if (scenario === "safe") {
-            description = "The road ahead is clear.";
-            baseRisk = 10;
-            actualHazard = false;
-        }
-        else if (scenario === "traffic") {
-            description = "A slower vehicle is travelling ahead.";
-            baseRisk = 45;
-            actualHazard = false;
-        }
-        else if (scenario === "hazard") {
-            description = "The vehicle ahead has suddenly braked.";
-            baseRisk = 90;
-            actualHazard = true;
+    <script>
+        let threshold = 60;
+
+        function updateThreshold() {
+            threshold = Number(
+                document.getElementById("sensitivity").value
+            );
+
+            document.getElementById("thresholdDisplay").textContent =
+                "Warning Threshold: " + threshold + "%";
         }
 
-        // Simulate uncertainty in sensor readings
-        let sensorNoise = Math.random() * 100 - 50;
+        function selectScenario(scenario) {
+            let description;
+            let baseRisk;
+            let actualHazard;
 
-        let risk = Math.round(baseRisk + sensorNoise);
+            if (scenario === "safe") {
+                description = "The road ahead is clear.";
+                baseRisk = 10;
+                actualHazard = false;
+            }
+            else if (scenario === "traffic") {
+                description = "A slower vehicle is travelling ahead.";
+                baseRisk = 45;
+                actualHazard = false;
+            }
+            else if (scenario === "hazard") {
+                description = "The vehicle ahead has suddenly braked.";
+                baseRisk = 90;
+                actualHazard = true;
+            }
 
-        // Keep the risk score between 0 and 100
-        risk = Math.max(0, Math.min(100, risk));
+            // Simulate uncertainty in sensor readings
+            let sensorNoise = Math.random() * 100 - 50;
 
-        document.getElementById("environment").textContent =
-            description;
+            let risk = Math.round(baseRisk + sensorNoise);
 
-        document.getElementById("risk").textContent =
-            "Risk Score: " + risk + "%";
+            // Keep risk between 0 and 100
+            risk = Math.max(0, Math.min(100, risk));
 
-        evaluateRisk(risk, actualHazard);
-    }
+            document.getElementById("environment").textContent =
+                description;
 
-    function evaluateRisk(risk, actualHazard) {
-        const warning = document.getElementById("warning");
-        const status = document.getElementById("status");
+            document.getElementById("risk").textContent =
+                "Risk Score: " + risk + "%";
 
-        let warningIssued = risk >= threshold;
-
-        if (warningIssued) {
-            warning.textContent = "COLLISION WARNING";
-            warning.style.color = "#ef4444";
-            status.textContent = "Status: Potential collision detected";
-        }
-        else {
-            warning.textContent = "NO WARNING";
-            warning.style.color = "#4ade80";
-            status.textContent = "Status: Monitoring Road";
-        }
-
-       
-        if (warningIssued && actualHazard) {
-            console.log("Hit");
-        }
-        else if (warningIssued && !actualHazard) {
-            console.log("False Alarm");
-        }
-        else if (!warningIssued && actualHazard) {
-            console.log("Miss");
-        }
-        else {
-            console.log("Correct Rejection");
-        }
-    }
-</script>
-
-    const threshold = 60;
-
-    function selectScenario(scenario) {
-        let description;
-        let risk;
-
-        if (scenario === "safe") {
-            description = "The road ahead is clear.";
-            risk = 10;
-        }
-        else if (scenario === "traffic") {
-            description = "A slower vehicle is travelling ahead.";
-            risk = 45;
-        }
-        else if (scenario === "hazard") {
-            description = "The vehicle ahead has suddenly braked.";
-            risk = 90;
+            evaluateRisk(risk, actualHazard);
         }
 
-        document.getElementById("environment").textContent =
-            description;
+        function evaluateRisk(risk, actualHazard) {
+            const warning = document.getElementById("warning");
+            const status = document.getElementById("status");
 
-        document.getElementById("risk").textContent =
-            "Risk Score: " + risk + "%";
+            let warningIssued = risk >= threshold;
 
-        evaluateRisk(risk);
-    }
+            if (warningIssued) {
+                warning.textContent = "COLLISION WARNING";
+                warning.style.color = "#ef4444";
+                status.textContent = "Status: Potential collision detected";
+            }
+            else {
+                warning.textContent = "NO WARNING";
+                warning.style.color = "#4ade80";
+                status.textContent = "Status: Monitoring Road";
+            }
 
-    function evaluateRisk(risk) {
-        const warning = document.getElementById("warning");
-        const status = document.getElementById("status");
-
-        if (risk >= threshold) {
-            warning.textContent = "COLLISION WARNING";
-            warning.style.color = "#ef4444";
-            status.textContent = "Status: Potential collision detected";
+            // Classify the detection outcome
+            if (warningIssued && actualHazard) {
+                console.log("Hit");
+            }
+            else if (warningIssued && !actualHazard) {
+                console.log("False Alarm");
+            }
+            else if (!warningIssued && actualHazard) {
+                console.log("Miss");
+            }
+            else {
+                console.log("Correct Rejection");
+            }
         }
-        else {
-            warning.textContent = "NO WARNING";
-            warning.style.color = "#4ade80";
-            status.textContent = "Status: Monitoring Road";
-        }
-    }
-</script>
-
-
-
+    </script>
 
 </body>
 </html>
-
