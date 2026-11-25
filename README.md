@@ -124,3 +124,28 @@ AI was used during development to assist with:
 
 - index.html: Complete interactive simulation.
 - README.md: Project documentation.
+
+
+
+## Functional Testing
+
+| Test | Result |
+|---|---|
+| HTML opens without errors | Pass |
+| All three driving scenarios work | Pass |
+| Risk scores vary between trials | Pass |
+| Warning decisions follow the threshold | Pass |
+| All four sensitivity modes work | Pass |
+| False alarms and misses are recorded | Pass |
+| Threshold increases after false alarms | Pass |
+| Threshold decreases after missed hazards | Pass |
+| Brake and ignore controls work | Pass |
+| Reaction times are recorded | Pass |
+| Performance statistics calculate correctly | Pass |
+| Trial history records each scenario | Pass |
+| Reset clears statistics and history | Pass |
+| Interface displays correctly | Pass |
+
+All 14 functional tests passed.
+
+
