@@ -66,6 +66,39 @@
     <h2>Driving Environment</h2>
 
     <p id="environment">No scenario selected.</p>
+    <h2>Select Driving Scenario</h2>
+
+<button onclick="selectScenario('safe')">
+    Clear Road
+</button>
+
+<button onclick="selectScenario('traffic')">
+    Slow Traffic
+</button>
+
+<button onclick="selectScenario('hazard')">
+    Sudden Braking
+</button>
+
+<script>
+    function selectScenario(scenario) {
+        let description;
+
+        if (scenario === "safe") {
+            description = "The road ahead is clear.";
+        }
+        else if (scenario === "traffic") {
+            description = "A slower vehicle is travelling ahead.";
+        }
+        else if (scenario === "hazard") {
+            description = "The vehicle ahead has suddenly braked.";
+        }
+
+        document.getElementById("environment").textContent =
+            description;
+    }
+</script>
+
 
 </body>
 </html>
