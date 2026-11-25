@@ -80,26 +80,81 @@
     Sudden Braking
 </button>
 
+
 <script>
+    const threshold = 60;
+
     function selectScenario(scenario) {
         let description;
+        let baseRisk;
+        let actualHazard;
 
         if (scenario === "safe") {
             description = "The road ahead is clear.";
+            baseRisk = 10;
+            actualHazard = false;
         }
         else if (scenario === "traffic") {
             description = "A slower vehicle is travelling ahead.";
+            baseRisk = 45;
+            actualHazard = false;
         }
         else if (scenario === "hazard") {
             description = "The vehicle ahead has suddenly braked.";
+            baseRisk = 90;
+            actualHazard = true;
         }
+
+        // Simulate uncertainty in sensor readings
+        let sensorNoise = Math.random() * 100 - 50;
+
+        let risk = Math.round(baseRisk + sensorNoise);
+
+        // Keep the risk score between 0 and 100
+        risk = Math.max(0, Math.min(100, risk));
 
         document.getElementById("environment").textContent =
             description;
+
+        document.getElementById("risk").textContent =
+            "Risk Score: " + risk + "%";
+
+        evaluateRisk(risk, actualHazard);
     }
 
+    function evaluateRisk(risk, actualHazard) {
+        const warning = document.getElementById("warning");
+        const status = document.getElementById("status");
 
-<script>
+        let warningIssued = risk >= threshold;
+
+        if (warningIssued) {
+            warning.textContent = "COLLISION WARNING";
+            warning.style.color = "#ef4444";
+            status.textContent = "Status: Potential collision detected";
+        }
+        else {
+            warning.textContent = "NO WARNING";
+            warning.style.color = "#4ade80";
+            status.textContent = "Status: Monitoring Road";
+        }
+
+       
+        if (warningIssued && actualHazard) {
+            console.log("Hit");
+        }
+        else if (warningIssued && !actualHazard) {
+            console.log("False Alarm");
+        }
+        else if (!warningIssued && actualHazard) {
+            console.log("Miss");
+        }
+        else {
+            console.log("Correct Rejection");
+        }
+    }
+</script>
+
     const threshold = 60;
 
     function selectScenario(scenario) {
