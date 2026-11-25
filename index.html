@@ -97,7 +97,33 @@
         document.getElementById("environment").textContent =
             description;
     }
+
+<script>
+    function selectScenario(scenario) {
+        let description;
+        let risk;
+
+        if (scenario === "safe") {
+            description = "The road ahead is clear.";
+            risk = 10;
+        }
+        else if (scenario === "traffic") {
+            description = "A slower vehicle is travelling ahead.";
+            risk = 45;
+        }
+        else if (scenario === "hazard") {
+            description = "The vehicle ahead has suddenly braked.";
+            risk = 90;
+        }
+
+        document.getElementById("environment").textContent =
+            description;
+
+        document.getElementById("risk").textContent =
+            "Risk Score: " + risk + "%";
+    }
 </script>
+
 
 
 </body>
