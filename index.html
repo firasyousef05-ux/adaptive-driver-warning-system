@@ -44,6 +44,27 @@
             max-width: 500px;
             margin: 20px auto;
         }
+
+        #historyPanel {
+            max-width: 1100px;
+            margin: 20px auto;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #243247;
+        }
+
+        th, td {
+            border: 1px solid #475569;
+            padding: 12px;
+        }
+
+        th {
+            background-color: #334155;
+        }
     </style>
 </head>
 
@@ -68,17 +89,9 @@
 
     <h2>Select Driving Scenario</h2>
 
-    <button onclick="selectScenario('safe')">
-        Clear Road
-    </button>
-
-    <button onclick="selectScenario('traffic')">
-        Slow Traffic
-    </button>
-
-    <button onclick="selectScenario('hazard')">
-        Sudden Braking
-    </button>
+    <button onclick="selectScenario('safe')">Clear Road</button>
+    <button onclick="selectScenario('traffic')">Slow Traffic</button>
+    <button onclick="selectScenario('hazard')">Sudden Braking</button>
 
     <h2>Warning Sensitivity</h2>
 
@@ -128,6 +141,28 @@
         <p id="averageReaction">Average Response Time: --</p>
     </div>
 
+    <h2>Trial History</h2>
+
+    <div id="historyPanel">
+        <table>
+            <thead>
+                <tr>
+                    <th>Trial</th>
+                    <th>Scenario</th>
+                    <th>Mode</th>
+                    <th>Risk</th>
+                    <th>Threshold</th>
+                    <th>Outcome</th>
+                    <th>Response</th>
+                    <th>Time (s)</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+        </table>
+    </div>
+
+    <button onclick="resetSimulation()">Reset Simulation</button>
+
     <script>
         let threshold = 60;
         let warningTime = null;
@@ -144,6 +179,9 @@
         let unanswered = 0;
         let totalReactionTime = 0;
         let responseCount = 0;
+
+        let trialHistory = [];
+        let currentTrial = null;
 
         function updateThreshold() {
             let mode = document.getElementById("sensitivity").value;
@@ -174,25 +212,30 @@
         function selectScenario(scenario) {
             if (warningTime !== null) {
                 unanswered++;
+                currentTrial.response = "Unanswered";
                 warningTime = null;
             }
 
             let description;
             let baseRisk;
             let actualHazard;
+            let scenarioName;
 
             if (scenario === "safe") {
                 description = "The road ahead is clear.";
+                scenarioName = "Clear Road";
                 baseRisk = 10;
                 actualHazard = false;
             }
             else if (scenario === "traffic") {
                 description = "A slower vehicle is travelling ahead.";
+                scenarioName = "Slow Traffic";
                 baseRisk = 45;
                 actualHazard = false;
             }
             else if (scenario === "hazard") {
                 description = "The vehicle ahead has suddenly braked.";
+                scenarioName = "Sudden Braking";
                 baseRisk = 90;
                 actualHazard = true;
             }
@@ -214,10 +257,10 @@
             document.getElementById("reactionTime").textContent =
                 "Reaction Time: --";
 
-            evaluateRisk(risk, actualHazard);
+            evaluateRisk(risk, actualHazard, scenarioName);
         }
 
-        function evaluateRisk(risk, actualHazard) {
+        function evaluateRisk(risk, actualHazard, scenarioName) {
             const warning = document.getElementById("warning");
             const status = document.getElementById("status");
 
@@ -274,27 +317,41 @@
                 outcome = "Correct Rejection";
             }
 
+            // Store individual trial information
+            const modeSelect = document.getElementById("sensitivity");
+
+            currentTrial = {
+                number: totalTrials,
+                scenario: scenarioName,
+                mode: modeSelect.options[modeSelect.selectedIndex].text,
+                risk: risk,
+                threshold: decisionThreshold,
+                outcome: outcome,
+                response: warningIssued ? "Pending" : "Not applicable",
+                time: "--"
+            };
+
+            trialHistory.push(currentTrial);
+
             if (adaptiveMode) {
                 adaptThreshold(outcome);
             }
 
             updateStatistics();
+            updateHistory();
         }
 
-        // Rule-based adaptive warning algorithm
         function adaptThreshold(outcome) {
             let previousThreshold = threshold;
             let message;
 
             if (outcome === "False Alarm") {
                 threshold += 5;
-
                 message =
                     "False alarm detected. Reducing warning sensitivity.";
             }
             else if (outcome === "Miss") {
                 threshold -= 10;
-
                 message =
                     "Missed hazard detected. Increasing warning sensitivity.";
             }
@@ -303,7 +360,6 @@
                     "Correct detection. Maintaining current sensitivity.";
             }
 
-            // Prevent extreme threshold values
             threshold = Math.max(30, Math.min(80, threshold));
 
             if (threshold !== previousThreshold) {
@@ -344,12 +400,16 @@
             totalReactionTime += reactionTime;
             responseCount++;
 
+            currentTrial.response = action;
+            currentTrial.time = reactionTime.toFixed(2);
+
             warningTime = null;
 
             document.getElementById("brakeButton").disabled = true;
             document.getElementById("ignoreButton").disabled = true;
 
             updateStatistics();
+            updateHistory();
         }
 
         function updateStatistics() {
@@ -377,31 +437,111 @@
             document.getElementById("unanswered").textContent =
                 "Unanswered Warnings: " + unanswered;
 
-            if (totalTrials > 0) {
-                let accuracy =
-                    ((hits + correctRejections) / totalTrials) * 100;
+            let accuracy = totalTrials > 0
+                ? (((hits + correctRejections) / totalTrials) * 100)
+                    .toFixed(1) + "%"
+                : "--";
 
-                document.getElementById("accuracy").textContent =
-                    "Detection Accuracy: " + accuracy.toFixed(1) + "%";
-            }
+            document.getElementById("accuracy").textContent =
+                "Detection Accuracy: " + accuracy;
 
             let nonHazardTrials = falseAlarms + correctRejections;
 
-            if (nonHazardTrials > 0) {
-                let falseAlarmRate =
-                    (falseAlarms / nonHazardTrials) * 100;
+            let falseAlarmRate = nonHazardTrials > 0
+                ? ((falseAlarms / nonHazardTrials) * 100)
+                    .toFixed(1) + "%"
+                : "--";
 
-                document.getElementById("falseAlarmRate").textContent =
-                    "False Alarm Rate: " + falseAlarmRate.toFixed(1) + "%";
+            document.getElementById("falseAlarmRate").textContent =
+                "False Alarm Rate: " + falseAlarmRate;
+
+            let average = responseCount > 0
+                ? (totalReactionTime / responseCount)
+                    .toFixed(2) + " seconds"
+                : "--";
+
+            document.getElementById("averageReaction").textContent =
+                "Average Response Time: " + average;
+        }
+
+        // Display all recorded trials
+        function updateHistory() {
+            const historyBody = document.getElementById("historyBody");
+
+            historyBody.innerHTML = "";
+
+            trialHistory.forEach(function(trial) {
+                const row = historyBody.insertRow();
+
+                const values = [
+                    trial.number,
+                    trial.scenario,
+                    trial.mode,
+                    trial.risk + "%",
+                    trial.threshold + "%",
+                    trial.outcome,
+                    trial.response,
+                    trial.time
+                ];
+
+                values.forEach(function(value) {
+                    row.insertCell().textContent = value;
+                });
+            });
+        }
+
+        // Reset the experiment
+        function resetSimulation() {
+            if (!confirm("Reset all simulation results?")) {
+                return;
             }
 
-            if (responseCount > 0) {
-                let average = totalReactionTime / responseCount;
+            totalTrials = 0;
+            hits = 0;
+            falseAlarms = 0;
+            misses = 0;
+            correctRejections = 0;
+            brakes = 0;
+            ignores = 0;
+            unanswered = 0;
+            totalReactionTime = 0;
+            responseCount = 0;
+            adjustments = 0;
 
-                document.getElementById("averageReaction").textContent =
-                    "Average Response Time: " +
-                    average.toFixed(2) + " seconds";
-            }
+            warningTime = null;
+            currentTrial = null;
+            trialHistory = [];
+
+            document.getElementById("warning").textContent =
+                "System Ready";
+
+            document.getElementById("warning").style.color =
+                "#4ade80";
+
+            document.getElementById("risk").textContent =
+                "Risk Score: 0%";
+
+            document.getElementById("status").textContent =
+                "Status: Monitoring Road";
+
+            document.getElementById("environment").textContent =
+                "No scenario selected.";
+
+            document.getElementById("response").textContent =
+                "Response: Waiting for warning";
+
+            document.getElementById("reactionTime").textContent =
+                "Reaction Time: --";
+
+            document.getElementById("adjustmentCount").textContent =
+                "Threshold Adjustments: 0";
+
+            document.getElementById("brakeButton").disabled = true;
+            document.getElementById("ignoreButton").disabled = true;
+
+            updateThreshold();
+            updateStatistics();
+            updateHistory();
         }
     </script>
 
