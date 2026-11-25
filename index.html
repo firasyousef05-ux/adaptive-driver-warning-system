@@ -44,6 +44,14 @@
             max-width: 500px;
             margin: 20px auto;
         }
+
+        #statistics {
+            background-color: #243247;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 500px;
+            margin: 20px auto;
+        }
     </style>
 </head>
 
@@ -105,9 +113,37 @@
     <p id="response">Response: Waiting for warning</p>
     <p id="reactionTime">Reaction Time: --</p>
 
+    <h2>Performance Statistics</h2>
+
+    <div id="statistics">
+        <p id="totalTrials">Total Scenarios: 0</p>
+        <p id="hits">Hits: 0</p>
+        <p id="falseAlarms">False Alarms: 0</p>
+        <p id="misses">Misses: 0</p>
+        <p id="correctRejections">Correct Rejections: 0</p>
+        <p id="accuracy">Detection Accuracy: --</p>
+        <p id="falseAlarmRate">False Alarm Rate: --</p>
+        <p id="brakes">Brake Responses: 0</p>
+        <p id="ignores">Ignored Warnings: 0</p>
+        <p id="unanswered">Unanswered Warnings: 0</p>
+        <p id="averageReaction">Average Response Time: --</p>
+    </div>
+
     <script>
         let threshold = 60;
         let warningTime = null;
+
+        // Store performance statistics
+        let totalTrials = 0;
+        let hits = 0;
+        let falseAlarms = 0;
+        let misses = 0;
+        let correctRejections = 0;
+        let brakes = 0;
+        let ignores = 0;
+        let unanswered = 0;
+        let totalReactionTime = 0;
+        let responseCount = 0;
 
         function updateThreshold() {
             threshold = Number(
@@ -119,6 +155,12 @@
         }
 
         function selectScenario(scenario) {
+            // Record an unanswered previous warning
+            if (warningTime !== null) {
+                unanswered++;
+                warningTime = null;
+            }
+
             let description;
             let baseRisk;
             let actualHazard;
@@ -139,9 +181,7 @@
                 actualHazard = true;
             }
 
-            // Simulate uncertainty in sensor readings
             let sensorNoise = Math.random() * 100 - 50;
-
             let risk = Math.round(baseRisk + sensorNoise);
 
             risk = Math.max(0, Math.min(100, risk));
@@ -152,7 +192,6 @@
             document.getElementById("risk").textContent =
                 "Risk Score: " + risk + "%";
 
-            // Reset driver response for the new scenario
             document.getElementById("response").textContent =
                 "Response: Waiting for warning";
 
@@ -173,7 +212,6 @@
                 warning.style.color = "#ef4444";
                 status.textContent = "Status: Potential collision detected";
 
-                // Start measuring response time
                 warningTime = performance.now();
 
                 document.getElementById("brakeButton").disabled = false;
@@ -193,19 +231,23 @@
                 document.getElementById("ignoreButton").disabled = true;
             }
 
-            // Classify detection outcome
+            totalTrials++;
+
+            // Record detection outcomes
             if (warningIssued && actualHazard) {
-                console.log("Hit");
+                hits++;
             }
             else if (warningIssued && !actualHazard) {
-                console.log("False Alarm");
+                falseAlarms++;
             }
             else if (!warningIssued && actualHazard) {
-                console.log("Miss");
+                misses++;
             }
             else {
-                console.log("Correct Rejection");
+                correctRejections++;
             }
+
+            updateStatistics();
         }
 
         function driverResponse(action) {
@@ -222,17 +264,76 @@
             document.getElementById("reactionTime").textContent =
                 "Reaction Time: " + reactionTime.toFixed(2) + " seconds";
 
-            // Prevent multiple responses to the same warning
+            if (action === "Brake") {
+                brakes++;
+            }
+            else {
+                ignores++;
+            }
+
+            totalReactionTime += reactionTime;
+            responseCount++;
+
             warningTime = null;
 
             document.getElementById("brakeButton").disabled = true;
             document.getElementById("ignoreButton").disabled = true;
+
+            updateStatistics();
+        }
+
+        function updateStatistics() {
+            document.getElementById("totalTrials").textContent =
+                "Total Scenarios: " + totalTrials;
+
+            document.getElementById("hits").textContent =
+                "Hits: " + hits;
+
+            document.getElementById("falseAlarms").textContent =
+                "False Alarms: " + falseAlarms;
+
+            document.getElementById("misses").textContent =
+                "Misses: " + misses;
+
+            document.getElementById("correctRejections").textContent =
+                "Correct Rejections: " + correctRejections;
+
+            document.getElementById("brakes").textContent =
+                "Brake Responses: " + brakes;
+
+            document.getElementById("ignores").textContent =
+                "Ignored Warnings: " + ignores;
+
+            document.getElementById("unanswered").textContent =
+                "Unanswered Warnings: " + unanswered;
+
+            if (totalTrials > 0) {
+                let accuracy =
+                    ((hits + correctRejections) / totalTrials) * 100;
+
+                document.getElementById("accuracy").textContent =
+                    "Detection Accuracy: " + accuracy.toFixed(1) + "%";
+            }
+
+            let nonHazardTrials = falseAlarms + correctRejections;
+
+            if (nonHazardTrials > 0) {
+                let falseAlarmRate =
+                    (falseAlarms / nonHazardTrials) * 100;
+
+                document.getElementById("falseAlarmRate").textContent =
+                    "False Alarm Rate: " + falseAlarmRate.toFixed(1) + "%";
+            }
+
+            if (responseCount > 0) {
+                let average = totalReactionTime / responseCount;
+
+                document.getElementById("averageReaction").textContent =
+                    "Average Response Time: " +
+                    average.toFixed(2) + " seconds";
+            }
         }
     </script>
-
-</body>
-</html>
-
 
 </body>
 </html>
